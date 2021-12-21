@@ -1,38 +1,41 @@
 use std::env;
-use std::io::prelude::*;
-use std::io::BufReader;
+use std::io::{self, BufReader, prelude::*};
 use std::fs::File;
 
-fn count_depth_increases(fname: &str) -> std::io::Result<i32> {
+fn read_input(fname: &str) -> io::Result<Vec<i32>> {
     let f = File::open(fname)?;
     let reader = BufReader::new(f);
 
+    let mut depths = Vec::new();
+
+    for line in reader.lines() {
+        depths.push(line?.parse().unwrap());
+    }
+
+    Ok(depths)
+}
+
+fn count_depth_increases(depths: &[i32]) -> usize {
     let mut count = 0;
-    let mut prev: i32 = i32::MAX;
+    let mut prev  = depths[0];
 
-    for (i, line) in reader.lines().enumerate() {
-        let depth: i32 = line?.parse().unwrap();
-
-        if i > 0 && depth > prev {
+    for &depth in depths.iter().skip(1) {
+        if depth > prev {
             count += 1;
         }
-
         prev = depth;
     }
 
-    Ok(count)
+    count
 }
 
-fn count_sliding_increases(fname: &str) -> std::io::Result<i32> {
-    let f = File::open(fname)?;
-    let reader = BufReader::new(f);
-
+fn count_sliding_increases(depths: &[i32]) -> usize {
     let mut count = 0;
-    let mut window: [i32; 3] = [i32::MAX, i32::MAX, i32::MAX];
+    let mut window: [i32; 3] = [depths[0] + depths[1] + depths[2],
+                                            depths[1] + depths[2],
+                                                        depths[2]];
 
-    for (i, line) in reader.lines().enumerate() {
-        let depth = line?.parse().unwrap();
-
+    for (i, &depth) in depths.iter().enumerate().skip(3) {
         let m = i % 3;
         let n = (i + 1) % 3;
         let k = (i + 2) % 3;
@@ -40,21 +43,23 @@ fn count_sliding_increases(fname: &str) -> std::io::Result<i32> {
         window[n] += depth;
         window[k] += depth;
 
-        if i > 2 && window[n] > window[m] {
+        if window[n] > window[m] {
             count += 1;
         }
 
         window[m] = depth;
     }
 
-    Ok(count)
+    count
 }
 
 fn main() {
     let args: Vec<String> = env::args().collect();
-    let result1 = count_depth_increases(&args[1]).unwrap();
+    let depths = read_input(&args[1]).unwrap();
+
+    let result1 = count_depth_increases(&depths);
     println!("Depth increased {} times", result1);
 
-    let result2 = count_sliding_increases(&args[1]).unwrap();
+    let result2 = count_sliding_increases(&depths);
     println!("Sliding window sum increased {} times", result2);
 }

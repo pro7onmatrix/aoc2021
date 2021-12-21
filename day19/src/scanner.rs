@@ -1,6 +1,6 @@
 use crate::vec3::Vec3;
 
-enum FaceCompare {
+enum Heading {
     Same,
     Flipped,
     Different,
@@ -54,17 +54,11 @@ impl Scanner {
             changes2.push(beacons2[i] - beacons2[i - 1]);
         }
 
-        // println!("========= BEFORE ==========");
-        // for (a, b) in changes1.iter().zip(changes2.iter()) {
-        //     println!("{}\t\t{}", a, b);
-        // }
-        // println!();
-
         match compare_directions(&changes1, 'x', &changes2, 'x') {
-            FaceCompare::Same => {
+            Heading::Same => {
                 // Both face in the positive x direction => only find "up"
             },
-            FaceCompare::Flipped => {
+            Heading::Flipped => {
                 // Facing in negative x direction => rotate 180° around y
                 first.flip_xz();
 
@@ -76,9 +70,9 @@ impl Scanner {
                     c.flip_xz();
                 }
             },
-            FaceCompare::Different => {
+            Heading::Different => {
                 match compare_directions(&changes1, 'x', &changes2, 'y') {
-                    FaceCompare::Same => {
+                    Heading::Same => {
                         // Facing towards positive y instead of positive x
                         // => rotate counterclockwise around z axis
                         first.rotate_z_counterclockwise();
@@ -91,7 +85,7 @@ impl Scanner {
                             c.rotate_z_counterclockwise();
                         }
                     },
-                    FaceCompare::Flipped => {
+                    Heading::Flipped => {
                         // Facing towards negative y instead of positive x
                         // => rotate clockwise around z axis
                         first.rotate_z_clockwise();
@@ -104,9 +98,9 @@ impl Scanner {
                             c.rotate_z_clockwise();
                         }
                     },
-                    FaceCompare::Different => {
+                    Heading::Different => {
                         match compare_directions(&changes1, 'x', &changes2, 'z') {
-                            FaceCompare::Same => {
+                            Heading::Same => {
                                 // Facing towards positive z instead of positive x
                                 // => rotate clockwise around y axis
                                 first.rotate_y_clockwise();
@@ -119,7 +113,7 @@ impl Scanner {
                                     c.rotate_y_clockwise();
                                 }
                             },
-                            FaceCompare::Flipped => {
+                            Heading::Flipped => {
                                 // Facing towards negative z instead of positive x
                                 // => rotate counterclockwise around y axis
                                 first.rotate_y_counterclockwise();
@@ -132,7 +126,7 @@ impl Scanner {
                                     c.rotate_y_counterclockwise();
                                 }
                             },
-                            FaceCompare::Different => panic!("No shared facing direction?!"),
+                            Heading::Different => panic!("No shared facing direction?!"),
                         }
                     }
                 }
@@ -142,10 +136,10 @@ impl Scanner {
         // Now both are facing the same x direction, make `self` define
         // positive z as "up"
         match compare_directions(&changes1, 'z', &changes2, 'z') {
-            FaceCompare::Same => {
+            Heading::Same => {
                 // Already done
             },
-            FaceCompare::Flipped => {
+            Heading::Flipped => {
                 // Defined up as negative z => rotate 180° around x axis
                 first.flip_yz();
 
@@ -157,9 +151,9 @@ impl Scanner {
                     c.flip_yz();
                 }
             },
-            FaceCompare::Different => {
+            Heading::Different => {
                 match compare_directions(&changes1, 'z', &changes2, 'y') {
-                    FaceCompare::Same => {
+                    Heading::Same => {
                         // Defined "up" as positive y instead of positive z
                         // => rotate clockwise around x axis
                         first.rotate_x_clockwise();
@@ -172,7 +166,7 @@ impl Scanner {
                             c.rotate_x_clockwise();
                         }
                     },
-                    FaceCompare::Flipped => {
+                    Heading::Flipped => {
                         // Defined "up" as negative y instead of positive z
                         // => rotate counterclockwise around x axis
                         first.rotate_x_counterclockwise();
@@ -185,7 +179,7 @@ impl Scanner {
                             c.rotate_x_counterclockwise();
                         }
                     },
-                    FaceCompare::Different => panic!("No shared 'up' direction?!"),
+                    Heading::Different => panic!("No shared 'up' direction?!"),
                 }
             },
         }
@@ -258,7 +252,7 @@ fn at_least_12_matches_in_rows(row1: &[i32], row2: &[i32]) -> bool {
     return false;
 }
 
-fn compare_directions(a: &[Vec3], axis1: char, b: &[Vec3], axis2: char) -> FaceCompare {
+fn compare_directions(a: &[Vec3], axis1: char, b: &[Vec3], axis2: char) -> Heading {
     let a: Vec<&i32> = match axis1 {
         'x' => a.iter().map(|v| v.x()).collect(),
         'y' => a.iter().map(|v| v.y()).collect(),
@@ -274,10 +268,10 @@ fn compare_directions(a: &[Vec3], axis1: char, b: &[Vec3], axis2: char) -> FaceC
     };
 
     if a.iter().zip(b.iter()).all(|(&&i, &&j)| i == j) {
-        FaceCompare::Same
+        Heading::Same
     } else if a.iter().zip(b.iter()).all(|(&&i, &&j)| i == -j) {
-        FaceCompare::Flipped
+        Heading::Flipped
     } else {
-        FaceCompare::Different
+        Heading::Different
     }
 }
